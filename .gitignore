@@ -1,5 +1,57 @@
-vendor/
-.php-cs-fixer.cache
+# Composer
+/vendor/
+composer.phar
+composer.lock
+
+# IDE
+.vscode/
 .idea/
-*.log
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Cache
+cache/
+*.cache
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Test files
+test/config.php
+test/last_sync.txt
+
+# Build files
+build/
+dist/
+
+# Coverage reports
+coverage/
+*.cov
+
+# Backup files
+*.bak
+*.backup
+
+# Runtime files
+runtime/
+*.pid
+
+# Application specific
+uploads/
+storage/

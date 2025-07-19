@@ -21,8 +21,11 @@
     ],
     "autoload": {
         "psr-4": {
-            "WangdianSDK\\": "src/"
-        }
+            "WangDianSDK\\": "src/"
+        },
+        "files": [
+            "src/wdtsdk.php"
+        ]
     },
     "scripts": {
         "cs-fix": "php-cs-fixer fix --ansi"
