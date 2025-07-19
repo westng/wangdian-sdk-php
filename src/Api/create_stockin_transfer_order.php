@@ -8,7 +8,7 @@ $appkey = 'zyOther';
 $appsecret = 'aa:cc';
 $service_url = 'http://192.168.1.135:30000/openapi';
 
-$client = new WdtErpClient($service_url, $sid, $appkey, $appsecret);
+$client = new WdtErpClient($sid, $appkey, $appsecret, $service_url);
 
 $transferInOrder = new stdClass();
 $transferInOrder->src_order_no = 'TF202003020004';

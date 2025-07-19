@@ -31,44 +31,26 @@ class WdtErpClient
 
     private bool $multi_tenant_mode = false;
 
-    public function __construct()
-    {
-        $count = func_num_args();
-        $args = func_get_args();
-        $methodName = '__construct' . ($count - 2);
-
-        if (method_exists($this, $methodName)) {
-            call_user_func_array([$this, $methodName], $args);
-        } else {
-            throw new \InvalidArgumentException('参数不合法');
-        }
-    }
-
-    public function __construct1(string $sid, string $key, string $secret): void
-    {
-        $this->sid = $sid;
-        $this->key = $key;
-        $this->parseSecret($secret);
-        $this->url = 'http://wdt.wangdian.cn/openapi';
-    }
-
-    public function __construct2(string $url, string $sid, string $key, string $secret): void
-    {
-        $this->url = $this->buildUrl($url);
-        $this->sid = $sid;
-        $this->key = $key;
-        $this->parseSecret($secret);
-    }
-
     /**
-     * @param bool $multi_tenant_mode 多卖家模式, 在同一环境(同一台机器/同一容器)下请求旗舰版多个卖家时需要开启
+     * 构造函数.
+     *
+     * @param string $url API基础URL，可选，默认为 http://wdt.wangdian.cn
+     * @param string $sid 店铺ID
+     * @param string $appkey 应用Key
+     * @param string $appsecret 应用Secret (格式: secret:salt)
+     * @param bool $multi_tenant_mode 多卖家模式，可选，默认为false
      */
-    public function __construct3(string $url, string $sid, string $key, string $secret, bool $multi_tenant_mode): void
-    {
+    public function __construct(
+        string $sid,
+        string $appkey,
+        string $appsecret,
+        string $url = 'http://wdt.wangdian.cn',
+        bool $multi_tenant_mode = false
+    ) {
         $this->url = $this->buildUrl($url);
         $this->sid = $sid;
-        $this->key = $key;
-        $this->parseSecret($secret);
+        $this->key = $appkey;
+        $this->parseSecret($appsecret);
         $this->multi_tenant_mode = $multi_tenant_mode;
     }
 

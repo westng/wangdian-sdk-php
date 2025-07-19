@@ -18,7 +18,7 @@ $appkey = 'zyOther';
 $appsecret = 'aa:bb';
 $service_url = 'http://192.168.1.135:30000/openapi';
 
-$client = new WdtErpClient($service_url, $sid, $appkey, $appsecret);
+$client = new WdtErpClient($sid, $appkey, $appsecret, $service_url);
 
 $stockTransfer = new stdClass();
 $stockTransfer->from_warehouse_no = 'lz';

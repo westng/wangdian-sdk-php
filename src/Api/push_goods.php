@@ -6,12 +6,12 @@ $appkey = 'wdt_test';
 $appsecret = 'aa:dd';
 $service_url = 'http://47.92.239.46/openapi';
 
-$client = new WdtErpClient($service_url, $sid, $appkey, $appsecret); // 直接输入ip参数
+$client = new WdtErpClient($sid, $appkey, $appsecret, $service_url); // 直接输入ip参数
 // $client = new WdtErpClient($sid, $appkey, $appsecret);//无需传入ip参数
 
 $pager = new Pager(50, 0);
 
-// $client = new WdtErpClient($service_url, $sid,$appkey, $appsecret);
+// $client = new WdtErpClient($sid, $appkey, $appsecret, $service_url);
 // date.setTimezone();
 $dateStr = substr(date('Y-m-d H:i:s'), 5);
 echo date('Y-m-d H:i:s');

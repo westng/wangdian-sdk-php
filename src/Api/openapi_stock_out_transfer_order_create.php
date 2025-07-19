@@ -18,7 +18,7 @@ $appkey = 'spw001';
 $appsecret = 'aa:cc';
 $service_url = 'http://172.17.105.65:30000/';
 
-$client = new WdtErpClient($service_url, $sid, $appkey, $appsecret);
+$client = new WdtErpClient($sid, $appkey, $appsecret, $service_url);
 
 $transferOutOrder = new stdClass();
 $transferOutOrder->src_order_no = 'TF201811130002';

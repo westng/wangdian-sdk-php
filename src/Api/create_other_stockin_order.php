@@ -18,7 +18,7 @@ $appkey = 'zyOther';
 $appsecret = 'aa:bb';
 $service_url = 'http://192.168.2.196:30000/';
 
-$client = new WdtErpClient($service_url, $sid, $appkey, $appsecret);
+$client = new WdtErpClient($sid, $appkey, $appsecret, $service_url);
 $order = new stdClass();
 $order->outer_no = 'CG201912268052';
 $order->warehouse_no = '1001';

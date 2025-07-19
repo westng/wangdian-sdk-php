@@ -18,7 +18,7 @@ $appkey = 'spw001';
 $appsecret = 'aa:cc';
 $service_url = 'http://127.0.0.1:30000/';
 
-$client = new WdtErpClient($service_url, $sid, $appkey, $appsecret);
+$client = new WdtErpClient($sid, $appkey, $appsecret, $service_url);
 
 $parMap = new stdClass();
 $parMap->start_time = '2020-01-01 00:00:00';

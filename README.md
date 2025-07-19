@@ -60,7 +60,7 @@ composer install
 
 ## 🚀 快速开始
 
-### 方式一：通过 Composer 安装（推荐）
+### 方式一：使用环境变量（推荐）
 
 #### 1. 安装 SDK
 
@@ -68,37 +68,49 @@ composer install
 composer require westng/wangdian-sdk-php
 ```
 
-#### 2. 创建配置文件
+#### 2. 配置环境变量
 
-在项目根目录创建 `config.php`：
+复制环境变量示例文件并填入您的配置：
 
-```php
-<?php
-namespace Config;
+```bash
+# 复制环境变量示例文件
+cp env.example .env
 
-// 旺店通API配置
-const SID = 'your_sid_here';           // 店铺ID
-const APPKEY = 'your_appkey_here';     // 应用Key
-const APPSECRET = 'your_appsecret_here'; // 应用Secret
-const BASE_URL = 'https://api.wangdian.cn'; // API基础URL
+# 编辑 .env 文件，填入您的实际配置信息
+```
+
+环境变量配置示例：
+
+```bash
+# 旺店通API配置
+WDT_SID=your_sid_here           # 店铺ID
+WDT_APPKEY=your_appkey_here     # 应用Key
+WDT_APPSECRET=your_secret:salt  # 应用Secret (格式: secret:salt)
+WDT_BASE_URL=https://api.wangdian.cn  # API基础URL
+WDT_MULTI_TENANT_MODE=false     # 多卖家模式（可选）
 ```
 
 #### 3. 基本使用示例
 
 ```php
 <?php
-require_once 'config.php';
+require_once 'vendor/autoload.php';
 
 use WangDianSDK\Client\WdtErpClient;
 use WangDianSDK\Model\Pager;
 use WangDianSDK\Exception\WdtErpException;
+use WangDianSDK\Config\ConfigLoader;
+
+// 加载配置
+$config = ConfigLoader::load();
 
 // 创建客户端实例
 $client = new WdtErpClient(
-    Config\SID,
-    Config\APPKEY,
-    Config\APPSECRET,
-    Config\BASE_URL
+    $config['sid'],
+    $config['appkey'],
+    $config['appsecret'],
+    $config['base_url'],
+    $config['multi_tenant_mode']
 );
 
 try {
@@ -117,7 +129,7 @@ try {
 }
 ```
 
-### 方式二：手动安装
+### 方式二：直接使用构造函数参数
 
 #### 1. 下载 SDK
 
@@ -127,27 +139,23 @@ cd wangdian-sdk-php
 composer install
 ```
 
-#### 2. 创建配置文件
-
-同方式一
-
-#### 3. 基本使用示例
+#### 2. 基本使用示例
 
 ```php
 <?php
-require_once 'vendor/autoload.php';  // 需要手动引入自动加载器
-require_once 'config.php';
+require_once 'vendor/autoload.php';
 
 use WangDianSDK\Client\WdtErpClient;
 use WangDianSDK\Model\Pager;
 use WangDianSDK\Exception\WdtErpException;
 
-// 创建客户端实例
+// 直接传入配置参数
 $client = new WdtErpClient(
-    Config\SID,
-    Config\APPKEY,
-    Config\APPSECRET,
-    Config\BASE_URL
+    'your_sid_here',
+    'your_appkey_here',
+    'your_secret:salt',
+    'https://api.wangdian.cn',
+    false  // 多卖家模式
 );
 
 // ... 其余代码同方式一
@@ -358,7 +366,7 @@ wangdian-sdk-php/
 │   │   └── Pager.php            # 分页模型
 │   └── wdtsdk.php               # 兼容性入口文件
 ├── test/                         # 测试目录
-│   ├── config.php               # 测试配置
+│   ├── .env                     # 环境变量配置
 │   └── simple_test.php          # 简单测试示例
 ├── vendor/                       # Composer依赖
 ├── composer.json                 # Composer配置
@@ -371,26 +379,30 @@ wangdian-sdk-php/
 ### 运行测试
 
 ```bash
+# 运行环境变量测试（推荐）
+php test/env_test.php
+
 # 运行简单测试
 php test/simple_test.php
 
 # 运行官方示例
 php src/demo.php
+
+# 运行API示例（需要配置正确的API密钥）
+php src/Api/openapi_shop_update.php
 ```
 
 ### 测试配置
 
-确保 `test/config.php` 中包含正确的测试配置：
+确保 `.env` 文件中包含正确的测试配置：
 
-```php
-<?php
-namespace Config;
-
-// 测试环境配置
-const SID = 'test_sid';
-const APPKEY = 'test_appkey';
-const APPSECRET = 'test_appsecret';
-const BASE_URL = 'https://api.wangdian.cn';
+```bash
+# 测试环境配置
+WDT_SID=test_sid
+WDT_APPKEY=test_appkey
+WDT_APPSECRET=test_secret:test_salt
+WDT_BASE_URL=https://api.wangdian.cn
+WDT_MULTI_TENANT_MODE=false
 ```
 
 ## 🤝 贡献指南
@@ -425,3 +437,9 @@ const BASE_URL = 'https://api.wangdian.cn';
 ---
 
 **注意**：使用本 SDK 前，请确保您已获得旺店通开放平台的开发者权限，并正确配置了相关的 API 密钥。
+
+### 🔒 安全提醒
+
+- **环境变量安全**：`.env` 文件包含敏感信息，已被 `.gitignore` 排除，不会被提交到版本控制系统
+- **密钥保护**：请妥善保管您的 API 密钥，不要将其提交到公开的代码仓库
+- **生产环境**：生产环境建议使用系统环境变量或容器环境变量存储敏感配置信息

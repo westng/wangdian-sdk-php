@@ -16,7 +16,7 @@ $appkey = 'wdt_test';
 $appsecret = 'aa:dd';
 $service_url = 'http://47.92.239.46/openapi';
 
-$client = new WdtErpClient($service_url, $sid, $appkey, $appsecret); // 直接输入ip参数
+$client = new WdtErpClient($sid, $appkey, $appsecret, $service_url); // 直接输入ip参数
 
 $pager = new Pager(50, 0);
 

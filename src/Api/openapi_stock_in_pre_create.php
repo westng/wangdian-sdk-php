@@ -17,7 +17,7 @@ $appkey = 'spw001';
 $appsecret = 'aa:cc';
 $service_url = 'http://172.17.105.65:30000/';
 
-$client = new WdtErpClient($service_url, $sid, $appkey, $appsecret);
+$client = new WdtErpClient($sid, $appkey, $appsecret, $service_url);
 
 $stockinOrder = new stdClass();
 $stockinOrder->warehouse_no = 'spw_warehouse003';

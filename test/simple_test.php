@@ -9,10 +9,10 @@ declare(strict_types=1);
  * @contact  westng
  * @license  https://github.com/westng/wangdian-sdk-php/blob/main/LICENSE
  */
-require_once 'config.php';
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use WangDianSDK\Client\WdtErpClient;
+use WangDianSDK\Config\ConfigLoader;
 use WangDianSDK\Exception\WdtErpException;
 use WangDianSDK\Model\Pager;
 
@@ -22,18 +22,32 @@ use WangDianSDK\Model\Pager;
  */
 class SettingShopQueryShop
 {
-    private const SID = SID;
-
-    private const APPKEY = APPKEY;
-
-    private const APPSECRET = APPSECRET;
-
-    private const SERVICE_URL = 'http://wdt.wangdian.cn';
-
     public static function run(): void
     {
         try {
-            $client = new WdtErpClient(self::SERVICE_URL, self::SID, self::APPKEY, self::APPSECRET);
+            // 加载配置
+            $config = ConfigLoader::load();
+
+            // 验证配置
+            if (! ConfigLoader::validate()) {
+                $errors = ConfigLoader::getValidationErrors();
+                echo "❌ 配置验证失败:\n";
+                foreach ($errors as $error) {
+                    echo "  - {$error}\n";
+                }
+                echo "\n请检查您的 .env 文件或环境变量配置。\n";
+                exit(1);
+            }
+
+            echo "✓ 配置验证通过\n";
+
+            $client = new WdtErpClient(
+                $config['sid'],
+                $config['appkey'],
+                $config['appsecret'],
+                $config['base_url'],
+                $config['multi_tenant_mode']
+            );
             echo "✓ 客户端创建成功\n";
 
             $pager = new Pager(10, 0, true);  // 分页大小10，页号0，计算总数

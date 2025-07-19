@@ -33,7 +33,6 @@ temp/
 .env.production
 
 # Test files
-test/config.php
 test/last_sync.txt
 
 # Build files

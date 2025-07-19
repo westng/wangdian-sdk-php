@@ -16,7 +16,7 @@ $appkey = 'lichAPI';
 $appsecret = 'aa:cc';
 $service_url = 'http://192.168.2.174:30000';
 
-$client = new WdtErpClient($service_url, $sid, $appkey, $appsecret); // 直接输入ip参数
+$client = new WdtErpClient($sid, $appkey, $appsecret, $service_url); // 直接输入ip参数
 
 // $info = new stdClass();
 // $info->syn_stock = 200;
