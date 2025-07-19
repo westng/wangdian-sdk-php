@@ -1,0 +1,1 @@
+如果一个容器/一台服务器会向多个旗舰版客户发送请求,请在使用时设置多卖家模式. 在创建Client 时设置isMultiTenantMode为true, 请求样例见multi_tenant_mode_test.php

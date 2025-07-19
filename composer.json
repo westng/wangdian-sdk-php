@@ -1,0 +1,33 @@
+{
+    "name": "westng/wangdian-sdk-php",
+    "description": "旺店通旗舰版PHP SDK",
+    "keywords": [
+        "旺店通",
+        "PHP",
+        "SDK",
+        "旗舰版"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": ">=7.4",
+        "ext-curl": "*"
+    },
+    "authors": [
+        {
+            "name": "westng",
+            "email": "457395070@qq.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "WangdianSDK\\": "src/"
+        }
+    },
+    "scripts": {
+        "cs-fix": "php-cs-fixer fix --ansi"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.84"
+    }
+}
