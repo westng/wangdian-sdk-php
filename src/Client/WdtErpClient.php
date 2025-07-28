@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace WangDianSDK\Client;
 
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use WangDianSDK\Exception\WdtErpException;
 use WangDianSDK\Model\Pager;
 
@@ -31,6 +33,8 @@ class WdtErpClient
 
     private bool $multi_tenant_mode = false;
 
+    private ?Client $httpClient = null;
+
     /**
      * 构造函数.
      *
@@ -39,19 +43,22 @@ class WdtErpClient
      * @param string $appkey 应用Key
      * @param string $appsecret 应用Secret (格式: secret:salt)
      * @param bool $multi_tenant_mode 多卖家模式，可选，默认为false
+     * @param null|Client $httpClient 自定义HTTP客户端，可选
      */
     public function __construct(
         string $sid,
         string $appkey,
         string $appsecret,
         string $url = 'http://wdt.wangdian.cn',
-        bool $multi_tenant_mode = false
+        bool $multi_tenant_mode = false,
+        ?Client $httpClient = null
     ) {
         $this->url = $this->buildUrl($url);
         $this->sid = $sid;
         $this->key = $appkey;
         $this->parseSecret($appsecret);
         $this->multi_tenant_mode = $multi_tenant_mode;
+        $this->httpClient = $httpClient;
     }
 
     /**
@@ -92,26 +99,31 @@ class WdtErpClient
      */
     public function sendRequest(string $body, string $service_url): string
     {
-        $header_connection = $this->multi_tenant_mode ? 'Connection:close' : '';
-        $opts = [
-            'http' => [
-                'method' => 'POST',
-                'header' => "Content-Type: application/json\r\n"
-                    . 'X-Version-SDK: php-3.0'
-                    . $header_connection,
-                'content' => $body,
-                'timeout' => 30, // 添加超时设置
-            ],
-        ];
+        try {
+            $client = $this->getHttpClient();
 
-        $context = stream_context_create($opts);
-        $response = file_get_contents($service_url, false, $context);
+            $headers = [
+                'Content-Type' => 'application/json',
+                'X-Version-SDK' => 'php-3.0',
+            ];
 
-        if ($response === false) {
-            throw new WdtErpException('HTTP请求失败', 0);
+            $response = $client->post($service_url, [
+                'headers' => $headers,
+                'body' => $body,
+            ]);
+
+            $statusCode = $response->getStatusCode();
+            if ($statusCode >= 400) {
+                throw new WdtErpException(
+                    sprintf('HTTP请求失败，状态码: %d, 响应: %s', $statusCode, $response->getBody()->getContents()),
+                    $statusCode
+                );
+            }
+
+            return $response->getBody()->getContents();
+        } catch (GuzzleException $e) {
+            throw new WdtErpException('HTTP请求失败: ' . $e->getMessage(), $e->getCode());
         }
-
-        return $response;
     }
 
     /**
@@ -157,6 +169,31 @@ class WdtErpClient
     {
         $json = $this->execute('system.ScriptExtension.call', null, [$method, ...$args]);
         return $json->data ?? null;
+    }
+
+    /**
+     * 获取HTTP客户端实例.
+     */
+    private function getHttpClient(): Client
+    {
+        if ($this->httpClient === null) {
+            $config = [
+                'timeout' => 30,
+                'connect_timeout' => 10,
+                'http_errors' => false, // 不抛出HTTP异常，手动处理
+            ];
+
+            // 多租户模式特殊处理
+            if ($this->multi_tenant_mode) {
+                $config['headers'] = [
+                    'Connection' => 'close',
+                ];
+            }
+
+            $this->httpClient = new Client($config);
+        }
+
+        return $this->httpClient;
     }
 
     /**

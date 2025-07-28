@@ -9,8 +9,6 @@ declare(strict_types=1);
  * @contact  westng
  * @license  https://github.com/westng/wangdian-sdk-php/blob/main/LICENSE
  */
-require_once __DIR__ . '/../vendor/autoload.php';
-
 use WangDianSDK\Client\WdtErpClient;
 use WangDianSDK\Config\ConfigLoader;
 use WangDianSDK\Exception\WdtErpException;
@@ -53,11 +51,8 @@ class SettingShopQueryShop
             $pager = new Pager(10, 0, true);  // 分页大小10，页号0，计算总数
 
             $parMap = new stdClass();
-            $parMap->start_time = '2025-01-01 00:00:00';
-            $parMap->end_time = '2025-01-20 00:00:00';
-            $parMap->hide_deleted = 1;
 
-            $result = $client->pageCall('goods.Goods.queryWithSpec', $pager, $parMap);
+            $result = $client->pageCall('setting.Shop.queryShop', $pager, $parMap);
 
             if ($result) {
                 echo "✓ API调用成功\n";

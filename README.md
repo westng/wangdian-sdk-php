@@ -28,12 +28,8 @@
 - 📄 **分页支持**：内置分页类，轻松处理大量数据
 - 🔧 **多租户**：支持多卖家模式，灵活配置
 - 📊 **完整覆盖**：支持旺店通旗舰版所有主要 API 接口
-
-## 🖥️ 系统要求
-
-- PHP >= 7.4
-- cURL 扩展
-- Composer
+- 🌐 **Guzzle 集成**：使用 Guzzle HTTP 客户端，支持自定义配置
+- ⚡ **Hyperf 友好**：完美适配 Hyperf 框架，支持依赖注入
 
 ## 📦 安装
 
@@ -41,21 +37,6 @@
 
 ```bash
 composer require westng/wangdian-sdk-php
-```
-
-### 手动安装
-
-1. 克隆或下载项目到本地
-
-```bash
-git clone https://github.com/your-username/wangdian-sdk-php.git
-cd wangdian-sdk-php
-```
-
-2. 安装依赖
-
-```bash
-composer install
 ```
 
 ## 🚀 快速开始
@@ -68,97 +49,33 @@ composer install
 composer require westng/wangdian-sdk-php
 ```
 
-#### 2. 配置环境变量
 
-复制环境变量示例文件并填入您的配置：
-
-```bash
-# 复制环境变量示例文件
-cp env.example .env
-
-# 编辑 .env 文件，填入您的实际配置信息
-```
-
-环境变量配置示例：
-
-```bash
-# 旺店通API配置
-WDT_SID=your_sid_here           # 店铺ID
-WDT_APPKEY=your_appkey_here     # 应用Key
-WDT_APPSECRET=your_secret:salt  # 应用Secret (格式: secret:salt)
-WDT_BASE_URL=https://api.wangdian.cn  # API基础URL
-WDT_MULTI_TENANT_MODE=false     # 多卖家模式（可选）
-```
-
-#### 3. 基本使用示例
+### 使用自定义 Guzzle 客户端（推荐用于 Hyperf 项目）
 
 ```php
 <?php
-require_once 'vendor/autoload.php';
-
 use WangDianSDK\Client\WdtErpClient;
-use WangDianSDK\Model\Pager;
-use WangDianSDK\Exception\WdtErpException;
-use WangDianSDK\Config\ConfigLoader;
+use GuzzleHttp\Client;
 
-// 加载配置
-$config = ConfigLoader::load();
+// 创建自定义Guzzle客户端
+$httpClient = new Client([
+    'timeout' => 60,
+    'connect_timeout' => 15,
+    'http_errors' => false,
+    'headers' => [
+        'User-Agent' => 'Hyperf-WangDianSDK/1.0'
+    ]
+]);
 
-// 创建客户端实例
-$client = new WdtErpClient(
-    $config['sid'],
-    $config['appkey'],
-    $config['appsecret'],
-    $config['base_url'],
-    $config['multi_tenant_mode']
-);
-
-try {
-    // 查询商品信息
-    $params = [
-        'goods_no' => 'test123',
-        'page_no' => 1,
-        'page_size' => 10
-    ];
-
-    $result = $client->goodsQuery($params);
-    print_r($result);
-
-} catch (WdtErpException $e) {
-    echo "API调用失败: " . $e->getMessage();
-}
-```
-
-### 方式二：直接使用构造函数参数
-
-#### 1. 下载 SDK
-
-```bash
-git clone https://github.com/your-username/wangdian-sdk-php.git
-cd wangdian-sdk-php
-composer install
-```
-
-#### 2. 基本使用示例
-
-```php
-<?php
-require_once 'vendor/autoload.php';
-
-use WangDianSDK\Client\WdtErpClient;
-use WangDianSDK\Model\Pager;
-use WangDianSDK\Exception\WdtErpException;
-
-// 直接传入配置参数
+// 使用自定义客户端创建WangDian客户端
 $client = new WdtErpClient(
     'your_sid_here',
     'your_appkey_here',
     'your_secret:salt',
     'https://api.wangdian.cn',
-    false  // 多卖家模式
+    false,
+    $httpClient // 传入自定义Guzzle客户端
 );
-
-// ... 其余代码同方式一
 ```
 
 ## ⚙️ 配置说明
@@ -180,130 +97,71 @@ $client = new WdtErpClient(
 - ❌ **需要手动引入** `vendor/autoload.php`
 - ❌ 需要确保 Composer 依赖已安装
 
-### 必需配置项
 
-| 配置项      | 说明         | 获取方式                                    |
-| ----------- | ------------ | ------------------------------------------- |
-| `SID`       | 店铺 ID      | 旺店通后台 → 系统设置 → 店铺信息            |
-| `APPKEY`    | 应用 Key     | 旺店通后台 → 系统设置 → 开放平台 → 应用管理 |
-| `APPSECRET` | 应用 Secret  | 旺店通后台 → 系统设置 → 开放平台 → 应用管理 |
-| `BASE_URL`  | API 基础 URL | 生产环境：`https://api.wangdian.cn`         |
 
-### 多租户模式
+## 🌐 Guzzle 集成说明
 
-支持多卖家配置：
+### 为什么使用 Guzzle？
+
+- **更好的 HTTP 处理**：Guzzle 提供了更强大的 HTTP 客户端功能
+- **Hyperf 友好**：完美适配 Hyperf 框架的协程环境
+- **自定义配置**：支持自定义超时、重试、中间件等配置
+- **更好的错误处理**：提供更详细的 HTTP 错误信息
+
+### 在 Hyperf 项目中使用
 
 ```php
-// 多租户配置示例
-$configs = [
-    'seller1' => [
-        'sid' => 'sid1',
-        'appkey' => 'appkey1',
-        'appsecret' => 'appsecret1'
+<?php
+use WangDianSDK\Client\WdtErpClient;
+use GuzzleHttp\Client;
+
+// 在Hyperf服务中
+class WangDianService
+{
+    private WdtErpClient $client;
+
+    public function __construct()
+    {
+        // 创建适合Hyperf的Guzzle客户端
+        $httpClient = new Client([
+            'timeout' => 30,
+            'connect_timeout' => 10,
+            'http_errors' => false,
+            'headers' => [
+                'User-Agent' => 'Hyperf-WangDianSDK/1.0'
+            ]
+        ]);
+
+        $this->client = new WdtErpClient(
+            env('WDT_SID'),
+            env('WDT_APPKEY'),
+            env('WDT_APPSECRET'),
+            env('WDT_BASE_URL'),
+            env('WDT_MULTI_TENANT_MODE', false),
+            $httpClient
+        );
+    }
+}
+```
+
+### 自定义 Guzzle 配置
+
+```php
+// 高级配置示例
+$httpClient = new Client([
+    'timeout' => 60,
+    'connect_timeout' => 15,
+    'http_errors' => false,
+    'headers' => [
+        'User-Agent' => 'Custom-WangDianSDK/1.0',
+        'Accept' => 'application/json'
     ],
-    'seller2' => [
-        'sid' => 'sid2',
-        'appkey' => 'appkey2',
-        'appsecret' => 'appsecret2'
+    'verify' => false, // 跳过SSL验证（开发环境）
+    'allow_redirects' => [
+        'max' => 5,
+        'strict' => true
     ]
-];
-
-$client = new WdtErpClient(
-    $configs['seller1']['sid'],
-    $configs['seller1']['appkey'],
-    $configs['seller1']['appsecret']
-);
-```
-
-## 📚 API 示例
-
-### 商品管理
-
-```php
-// 查询商品
-$params = [
-    'goods_no' => 'test123',
-    'page_no' => 1,
-    'page_size' => 20
-];
-$result = $client->goodsQuery($params);
-
-// 推送商品
-$goodsData = [
-    'goods_no' => 'test123',
-    'goods_name' => '测试商品',
-    'goods_type' => 1,
-    'spec_list' => [
-        [
-            'spec_no' => 'test123-001',
-            'barcode' => '1234567890123'
-        ]
-    ]
-];
-$result = $client->goodsPush($goodsData);
-```
-
-### 库存管理
-
-```php
-// 查询库存
-$params = [
-    'spec_no' => 'test123-001',
-    'warehouse_no' => 'WH001'
-];
-$result = $client->stockQuery($params);
-
-// 库存计算
-$params = [
-    'spec_no' => 'test123-001',
-    'warehouse_no' => 'WH001'
-];
-$result = $client->calcStock($params);
-```
-
-### 订单管理
-
-```php
-// 查询订单
-$params = [
-    'start_time' => '2024-01-01 00:00:00',
-    'end_time' => '2024-01-31 23:59:59',
-    'page_no' => 1,
-    'page_size' => 50
-];
-$result = $client->tradeQuery($params);
-
-// 创建采购订单
-$orderData = [
-    'provider_no' => 'PROVIDER001',
-    'warehouse_no' => 'WH001',
-    'remark' => '测试采购订单',
-    'details' => [
-        [
-            'spec_no' => 'test123-001',
-            'goods_count' => 100,
-            'goods_price' => 10.50
-        ]
-    ]
-];
-$result = $client->purchaseOrderCreate($orderData);
-```
-
-### 分页查询
-
-```php
-// 使用分页类
-$pager = new Pager(1, 20); // 第1页，每页20条
-
-$params = [
-    'start_time' => '2024-01-01 00:00:00',
-    'end_time' => '2024-01-31 23:59:59'
-];
-
-// 合并分页参数
-$params = array_merge($params, $pager->toArray());
-
-$result = $client->tradeQuery($params);
+]);
 ```
 
 ## ⚠️ 错误处理
@@ -311,6 +169,7 @@ $result = $client->tradeQuery($params);
 ### 异常类型
 
 - `WdtErpException`：API 调用异常
+- `GuzzleException`：HTTP 请求异常（新增）
 - `JsonException`：JSON 解析异常
 - `Exception`：其他通用异常
 
@@ -359,7 +218,7 @@ try {
 wangdian-sdk-php/
 ├── src/                          # 源代码目录
 │   ├── Client/                   # 客户端类
-│   │   └── WdtErpClient.php     # 主要客户端类
+│   │   └── WdtErpClient.php     # 主要客户端类（已集成Guzzle）
 │   ├── Exception/                # 异常类
 │   │   └── WdtErpException.php  # 自定义异常
 │   ├── Model/                    # 模型类
@@ -367,30 +226,16 @@ wangdian-sdk-php/
 │   └── wdtsdk.php               # 兼容性入口文件
 ├── test/                         # 测试目录
 │   ├── .env                     # 环境变量配置
-│   └── simple_test.php          # 简单测试示例
+│   ├── simple_test.php          # 简单测试示例
+│   └── guzzle_test.php          # Guzzle集成测试
+├── examples/                     # 使用示例
+│   └── hyperf_usage.php         # Hyperf项目使用示例
 ├── vendor/                       # Composer依赖
 ├── composer.json                 # Composer配置
 ├── composer.lock                 # 依赖锁定文件
 └── README.md                     # 项目说明文档
 ```
 
-## 🧪 测试
-
-### 运行测试
-
-```bash
-# 运行环境变量测试（推荐）
-php test/env_test.php
-
-# 运行简单测试
-php test/simple_test.php
-
-# 运行官方示例
-php src/demo.php
-
-# 运行API示例（需要配置正确的API密钥）
-php src/Api/openapi_shop_update.php
-```
 
 ### 测试配置
 
