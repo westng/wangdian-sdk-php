@@ -14,6 +14,8 @@ namespace WangDianSDK\Client;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\HandlerStack;
+use GuzzleRetry\GuzzleRetryMiddleware;
 use WangDianSDK\Exception\WdtErpException;
 use WangDianSDK\Model\Pager;
 
@@ -34,6 +36,14 @@ class WdtErpClient
     private bool $multi_tenant_mode = false;
 
     private ?Client $httpClient = null;
+
+    private array $retryConfig = [
+        'max_retry_attempts' => 3,
+        'retry_on_status' => [429, 500, 502, 503, 504],
+        'retry_on_timeout' => true,
+        'retry_delay' => 1000, // 重试延迟（毫秒）
+        'exponential_backoff' => true, // 指数退避
+    ];
 
     /**
      * 构造函数.
@@ -59,6 +69,9 @@ class WdtErpClient
         $this->parseSecret($appsecret);
         $this->multi_tenant_mode = $multi_tenant_mode;
         $this->httpClient = $httpClient;
+
+        // 自动检测并优化Hyperf环境
+        $this->optimizeForHyperf();
     }
 
     /**
@@ -172,18 +185,82 @@ class WdtErpClient
     }
 
     /**
+     * 设置重试配置.
+     *
+     * @param array $config 重试配置
+     */
+    public function setRetryConfig(array $config): void
+    {
+        $this->retryConfig = array_merge($this->retryConfig, $config);
+        // 重置HTTP客户端，以便应用新的重试配置
+        $this->httpClient = null;
+    }
+
+    /**
+     * 获取重试配置.
+     */
+    public function getRetryConfig(): array
+    {
+        return $this->retryConfig;
+    }
+
+    /**
+     * 检查是否在Hyperf环境中运行.
+     */
+    public function isHyperfEnvironment(): bool
+    {
+        return class_exists('Hyperf\Context\ApplicationContext')
+               && class_exists('Hyperf\Di\Annotation\Inject');
+    }
+
+    /**
+     * 为Hyperf环境优化配置.
+     */
+    public function optimizeForHyperf(): void
+    {
+        if ($this->isHyperfEnvironment()) {
+            // 在Hyperf环境中，使用更短的超时时间和更积极的重试策略
+            $this->retryConfig = array_merge($this->retryConfig, [
+                'max_retry_attempts' => 2, // Hyperf中减少重试次数
+                'retry_delay' => 500, // 更短的重试延迟
+                'exponential_backoff' => true,
+            ]);
+
+            // 重置HTTP客户端以应用新配置
+            $this->httpClient = null;
+        }
+    }
+
+    /**
      * 获取HTTP客户端实例.
      */
     private function getHttpClient(): Client
     {
         if ($this->httpClient === null) {
+            $stack = HandlerStack::create();
+
+            // 配置重试中间件
+            $retryConfig = array_merge($this->retryConfig, [
+                'on_retry_callback' => function ($attempt, $delay, $request, $options, $response) {
+                    // 记录重试日志
+                    error_log(sprintf(
+                        'WangDian SDK 重试请求 - 第%d次重试，延迟%d毫秒，URL: %s',
+                        $attempt,
+                        $delay,
+                        $request->getUri()
+                    ));
+                },
+            ]);
+
+            $stack->push(GuzzleRetryMiddleware::factory($retryConfig));
+
             $config = [
                 'timeout' => 30,
                 'connect_timeout' => 10,
-                'http_errors' => false, // 不抛出HTTP异常，手动处理
+                'http_errors' => false,
+                'handler' => $stack,
             ];
 
-            // 多租户模式特殊处理
             if ($this->multi_tenant_mode) {
                 $config['headers'] = [
                     'Connection' => 'close',
