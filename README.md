@@ -113,21 +113,35 @@ class WangDianService
 
 ```php
 $retryConfig = [
+    'enable_retry' => true,           // 是否启用重试机制
     'max_retry_attempts' => 3,        // 最大重试次数
-    'retry_on_status' => [429, 500, 502, 503, 504], // 重试状态码
     'retry_on_timeout' => true,       // 超时重试
     'retry_delay' => 1000,            // 重试延迟（毫秒）
     'exponential_backoff' => true,    // 指数退避
 ];
 ```
 
+### 业务逻辑重试
+
+SDK 采用基于业务逻辑的重试机制，当旺店通平台返回以下错误时会自动重试：
+
+- **频率限制错误**：`status=100` 且 `message` 包含 "超过每分钟最大调用频率限制，请稍后重试"
+- **并发限制错误**：`status=100` 且 `message` 包含 "超过每分钟最大并发次数限制，请稍后重试"
+
+其他业务错误（如"未找到对应的单据信息"）不会触发重试，会直接抛出异常。
+
 ### 自定义重试配置
 
 ```php
+// 禁用重试机制
+$client->setRetryConfig(['enable_retry' => false]);
+
+// 启用重试机制并自定义配置
 $client->setRetryConfig([
-    'max_retry_attempts' => 5,
-    'retry_delay' => 2000,
-    'retry_on_status' => [429, 500, 502, 503, 504, 408],
+    'enable_retry' => true,           // 启用重试机制
+    'max_retry_attempts' => 5,        // 增加重试次数
+    'retry_delay' => 2000,            // 增加重试延迟
+    'exponential_backoff' => true,    // 启用指数退避
 ]);
 ```
 

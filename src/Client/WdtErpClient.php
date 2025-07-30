@@ -14,8 +14,6 @@ namespace WangDianSDK\Client;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\HandlerStack;
-use GuzzleRetry\GuzzleRetryMiddleware;
 use WangDianSDK\Exception\WdtErpException;
 use WangDianSDK\Model\Pager;
 
@@ -38,8 +36,8 @@ class WdtErpClient
     private ?Client $httpClient = null;
 
     private array $retryConfig = [
+        'enable_retry' => true,        // 是否启用重试机制
         'max_retry_attempts' => 3,
-        'retry_on_status' => [429, 500, 502, 503, 504],
         'retry_on_timeout' => true,
         'retry_delay' => 1000, // 重试延迟（毫秒）
         'exponential_backoff' => true, // 指数退避
@@ -237,28 +235,10 @@ class WdtErpClient
     private function getHttpClient(): Client
     {
         if ($this->httpClient === null) {
-            $stack = HandlerStack::create();
-
-            // 配置重试中间件
-            $retryConfig = array_merge($this->retryConfig, [
-                'on_retry_callback' => function ($attempt, $delay, $request, $options, $response) {
-                    // 记录重试日志
-                    error_log(sprintf(
-                        'WangDian SDK 重试请求 - 第%d次重试，延迟%d毫秒，URL: %s',
-                        $attempt,
-                        $delay,
-                        $request->getUri()
-                    ));
-                },
-            ]);
-
-            $stack->push(GuzzleRetryMiddleware::factory($retryConfig));
-
             $config = [
                 'timeout' => 30,
                 'connect_timeout' => 10,
                 'http_errors' => false,
-                'handler' => $stack,
             ];
 
             if ($this->multi_tenant_mode) {
@@ -319,27 +299,122 @@ class WdtErpClient
     }
 
     /**
+     * 判断是否需要重试.
+     */
+    private function shouldRetry(object $json): bool
+    {
+        // 检查返回的status是否为100，并且message包含需要重试的关键词
+        if (isset($json->status) && $json->status === 100) {
+            $message = $json->message ?? '';
+
+            // 检查是否包含需要重试的错误信息
+            $retryKeywords = [
+                '超过每分钟最大调用频率限制，请稍后重试',
+                '超过每分钟最大并发次数限制，请稍后重试',
+            ];
+
+            foreach ($retryKeywords as $keyword) {
+                if (strpos($message, $keyword) !== false) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 计算重试延迟时间.
+     */
+    private function calculateRetryDelay(int $attempt): int
+    {
+        $baseDelay = $this->retryConfig['retry_delay'];
+
+        if ($this->retryConfig['exponential_backoff']) {
+            // 指数退避：基础延迟 * 2^(重试次数-1)
+            return $baseDelay * pow(2, $attempt - 1);
+        }
+
+        return $baseDelay;
+    }
+
+    /**
      * 执行API调用.
      */
     private function execute(string $method, ?Pager $pager, array $args): object
     {
-        [$body, $service_url] = $this->buildRequest($method, $pager, $args);
-        $response = $this->sendRequest($body, $service_url);
+        // 如果禁用重试，直接执行一次请求
+        if (! $this->retryConfig['enable_retry']) {
+            [$body, $service_url] = $this->buildRequest($method, $pager, $args);
+            $response = $this->sendRequest($body, $service_url);
 
-        if (! $this->isJson($response)) {
-            throw new WdtErpException('服务器返回的不是有效的JSON数据', 0);
+            if (! $this->isJson($response)) {
+                throw new WdtErpException('服务器返回的不是有效的JSON数据', 0);
+            }
+
+            $json = json_decode($response);
+            if ($json === null) {
+                throw new WdtErpException('JSON解析失败', 0);
+            }
+
+            if (isset($json->status) && $json->status > 0) {
+                throw new WdtErpException($json->message ?? '未知错误', $json->status);
+            }
+
+            return $json;
         }
 
-        $json = json_decode($response);
-        if ($json === null) {
-            throw new WdtErpException('JSON解析失败', 0);
+        // 启用重试机制
+        $attempt = 0;
+        $maxAttempts = $this->retryConfig['max_retry_attempts'];
+
+        while ($attempt <= $maxAttempts) {
+            try {
+                [$body, $service_url] = $this->buildRequest($method, $pager, $args);
+                $response = $this->sendRequest($body, $service_url);
+
+                if (! $this->isJson($response)) {
+                    throw new WdtErpException('服务器返回的不是有效的JSON数据', 0);
+                }
+
+                $json = json_decode($response);
+                if ($json === null) {
+                    throw new WdtErpException('JSON解析失败', 0);
+                }
+
+                // 检查是否需要重试
+                if ($this->shouldRetry($json)) {
+                    ++$attempt;
+                    if ($attempt <= $maxAttempts) {
+                        $delay = $this->calculateRetryDelay($attempt);
+                        error_log(sprintf(
+                            'WangDian SDK 业务重试 - 第%d次重试，延迟%d毫秒，方法: %s，错误: %s',
+                            $attempt,
+                            $delay,
+                            $method,
+                            $json->message ?? '未知错误'
+                        ));
+                        usleep($delay * 1000); // 转换为微秒
+                        continue;
+                    }
+                }
+
+                // 如果不需要重试或已达到最大重试次数，抛出异常或返回结果
+                if (isset($json->status) && $json->status > 0) {
+                    throw new WdtErpException($json->message ?? '未知错误', $json->status);
+                }
+
+                return $json;
+            } catch (WdtErpException $e) {
+                // 如果是最后一次尝试，直接抛出异常
+                if ($attempt >= $maxAttempts) {
+                    throw $e;
+                }
+                ++$attempt;
+            }
         }
 
-        if (isset($json->status) && $json->status > 0) {
-            throw new WdtErpException($json->message ?? '未知错误', $json->status);
-        }
-
-        return $json;
+        throw new WdtErpException('达到最大重试次数', 0);
     }
 
     /**

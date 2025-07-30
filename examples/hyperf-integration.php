@@ -81,14 +81,20 @@ class WangDianService
     {
         echo "⚙️ 设置自定义重试配置...\n";
 
+        // 示例1：禁用重试机制
+        $this->client->setRetryConfig(['enable_retry' => false]);
+        echo "✓ 重试机制已禁用\n";
+
+        // 示例2：启用重试机制并自定义配置
         $this->client->setRetryConfig([
-            'max_retry_attempts' => 5,
-            'retry_delay' => 2000,
-            'retry_on_status' => [429, 500, 502, 503, 504, 408, 503],
-            'exponential_backoff' => true,
+            'enable_retry' => true,           // 启用重试机制
+            'max_retry_attempts' => 5,        // 增加重试次数
+            'retry_delay' => 2000,            // 增加重试延迟
+            'exponential_backoff' => true,    // 启用指数退避
         ]);
 
         echo "✓ 自定义重试配置已设置\n";
+        echo "✓ 重试机制说明：仅对频率限制和并发限制错误进行重试\n";
     }
 }
 
