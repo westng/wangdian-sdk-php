@@ -1,7 +1,7 @@
 # 旺店通旗舰版 PHP SDK
 
 [![PHP Version](https://img.shields.io/badge/PHP-%3E%3D7.4-blue.svg)](https://php.net)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 一个用于旺店通旗舰版 API 的 PHP SDK，提供简单易用的接口调用方法。
 
@@ -249,7 +249,7 @@ wangdian-sdk-php/
 
 ## 📄 许可证
 
-本项目基于 [MIT License](LICENSE) 开源协议。
+本项目基于 [Apache License 2.0](LICENSE) 开源协议。
 
 ## 🤝 贡献
 

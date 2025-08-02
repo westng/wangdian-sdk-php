@@ -8,7 +8,7 @@
         "旗舰版"
     ],
     "type": "library",
-    "license": "MIT",
+    "license": "Apache-2.0",
     "require": {
         "php": ">=7.4",
         "ext-curl": "*",
